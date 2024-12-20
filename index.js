@@ -41,7 +41,8 @@ app.post("/generate", async (req, res) => {
         const markdownContent = req.body.markdown;
 
         if (!markdownContent) {
-            return res.status(400).json({ error: "Conteúdo markdown é obrigatório." });
+            res.status(400).json({ error: "Conteúdo markdown é obrigatório." });
+            return;
         }
 
         const tempFilePath = join(__dirname, "temp.md");
@@ -52,30 +53,25 @@ app.post("/generate", async (req, res) => {
         exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
-                return res.status(500).json({ error: "Erro ao gerar o mapa mental" });
+                res.status(500).json({ error: "Erro ao gerar o mapa mental" });
+                return;
             }
 
-            // Envia a URL pública do HTML gerado
-            res.json({ url: `${req.protocol}://${req.get("host")}/mapa-mental.html` });
+            res.sendFile(outputPath, async (error) => {
+                if (error) {
+                    console.error("Erro ao enviar o arquivo:", error);
+                    res.status(500).json({ error: "Erro ao enviar o arquivo HTML" });
+                    return;
+                }
 
-            // Remove o arquivo Markdown temporário
-            await unlink(tempFilePath);
+                await unlink(tempFilePath); // Limpa o arquivo temporário
+                console.log("Arquivo temporário removido.");
+            });
         });
     } catch (error) {
         console.error("Erro interno do servidor:", error);
         res.status(500).json({ error: "Erro interno do servidor" });
     }
-});
-
-// Rota para servir o HTML gerado (rota pública)
-app.get("/mapa-mental.html", (req, res) => {
-    const outputPath = join(__dirname, "mapa-mental.html");
-    res.sendFile(outputPath, (error) => {
-        if (error) {
-            console.error("Erro ao enviar o arquivo:", error);
-            res.status(500).json({ error: "Erro ao acessar o mapa mental" });
-        }
-    });
 });
 
 // Inicialização do servidor
