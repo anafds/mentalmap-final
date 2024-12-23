@@ -81,9 +81,8 @@ app.post("/generate", async (req, res) => {
                     #mindmap {
                         width: 100%; /* Usa 100% da largura */
                         height: 100%; /* Usa 100% da altura */
-                        transform: scale(0.9); /* Ajusta a escala */
+                        transform: scale(1.05); /* Ajusta a escala */
                         transform-origin: center; /* Centraliza o ponto de escala */
-                        margin: 0 auto;
                     }
                 </style>
                 `;
