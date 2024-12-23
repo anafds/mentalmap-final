@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink, readFile } from "fs/promises"; // Adicionado readFile
+import { writeFile, unlink, readFile } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -64,9 +64,21 @@ app.post("/generate", async (req, res) => {
                 // Injete o CSS customizado no <head>
                 const customCSS = `
                 <style>
-                    @page { size: A4; margin: 10mm; }
-                    body { width: 210mm; height: 297mm; margin: 0; padding: 0; overflow: hidden; }
-                    #mindmap { max-width: 190mm; max-height: 277mm; }
+                    @page {
+                        size: A4 landscape; /* Define o formato A4 em paisagem */
+                        margin: 10mm;
+                    }
+                    body {
+                        width: 297mm; /* Largura de uma página A4 em paisagem */
+                        height: 210mm; /* Altura de uma página A4 em paisagem */
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden; /* Impede que o conteúdo extrapole */
+                    }
+                    #mindmap {
+                        max-width: 277mm; /* Limita o mapa dentro da largura de A4 com margens */
+                        max-height: 190mm; /* Limita o mapa dentro da altura de A4 com margens */
+                    }
                 </style>
                 `;
                 htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
