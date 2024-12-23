@@ -65,19 +65,25 @@ app.post("/generate", async (req, res) => {
                 const customCSS = `
                 <style>
                     @page {
-                        size: A4 landscape; /* Define o formato A4 em paisagem */
-                        margin: 10mm;
+                        size: A4 landscape; /* Modo paisagem */
+                        margin: 5mm; /* Margem reduzida */
                     }
                     body {
-                        width: 297mm; /* Largura de uma página A4 em paisagem */
-                        height: 210mm; /* Altura de uma página A4 em paisagem */
+                        width: 297mm; /* Largura A4 em paisagem */
+                        height: 210mm; /* Altura A4 em paisagem */
                         margin: 0;
                         padding: 0;
                         overflow: hidden; /* Impede que o conteúdo extrapole */
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
                     }
                     #mindmap {
-                        max-width: 277mm; /* Limita o mapa dentro da largura de A4 com margens */
-                        max-height: 190mm; /* Limita o mapa dentro da altura de A4 com margens */
+                        max-width: 290mm; /* Largura quase total da página */
+                        max-height: 200mm; /* Altura quase total da página */
+                        transform: scale(1.1); /* Escala para ampliar o conteúdo */
+                        transform-origin: center; /* Centraliza o ponto de escala */
+                        margin: 0 auto;
                     }
                 </style>
                 `;
@@ -91,7 +97,7 @@ app.post("/generate", async (req, res) => {
                 await unlink(tempFilePath);
                 console.log("Arquivo temporário removido.");
             } catch (error) {
-                console.error("Erro ao processar o HTML:", error);
+                console.error("Erro ao processar o HTML gerado:", error);
                 res.status(500).json({ error: "Erro ao processar o HTML gerado" });
             }
         });
