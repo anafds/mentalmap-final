@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink } from "fs/promises";
+import { writeFile, unlink, readFile } from "fs/promises"; // Adicionado readFile
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -57,16 +57,31 @@ app.post("/generate", async (req, res) => {
                 return;
             }
 
-            res.sendFile(outputPath, async (error) => {
-                if (error) {
-                    console.error("Erro ao enviar o arquivo:", error);
-                    res.status(500).json({ error: "Erro ao enviar o arquivo HTML" });
-                    return;
-                }
+            try {
+                // Leia o HTML gerado
+                let htmlContent = await readFile(outputPath, "utf8");
 
-                await unlink(tempFilePath); // Limpa o arquivo temporário
+                // Injete o CSS customizado no <head>
+                const customCSS = `
+                <style>
+                    @page { size: A4; margin: 10mm; }
+                    body { width: 210mm; height: 297mm; margin: 0; padding: 0; overflow: hidden; }
+                    #mindmap { max-width: 190mm; max-height: 277mm; }
+                </style>
+                `;
+                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
+
+                // Envie o HTML modificado para o cliente
+                res.setHeader("Content-Type", "text/html");
+                res.send(htmlContent);
+
+                // Limpeza do arquivo temporário
+                await unlink(tempFilePath);
                 console.log("Arquivo temporário removido.");
-            });
+            } catch (error) {
+                console.error("Erro ao processar o HTML:", error);
+                res.status(500).json({ error: "Erro ao processar o HTML gerado" });
+            }
         });
     } catch (error) {
         console.error("Erro interno do servidor:", error);
