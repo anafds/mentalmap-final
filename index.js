@@ -65,8 +65,8 @@ app.post("/generate", async (req, res) => {
                 const customCSS = `
                 <style>
                     @page {
-                        size: A4 landscape; /* Modo paisagem */
-                        margin: 5mm; /* Margem reduzida */
+                        size: A4 landscape; /* Define o formato A4 paisagem */
+                        margin: 0; /* Remove margens */
                     }
                     body {
                         width: 297mm; /* Largura A4 em paisagem */
@@ -79,9 +79,9 @@ app.post("/generate", async (req, res) => {
                         align-items: center;
                     }
                     #mindmap {
-                        max-width: 290mm; /* Largura quase total da página */
-                        max-height: 200mm; /* Altura quase total da página */
-                        transform: scale(1.1); /* Escala para ampliar o conteúdo */
+                        width: 100%; /* Usa 100% da largura */
+                        height: 100%; /* Usa 100% da altura */
+                        transform: scale(0.9); /* Ajusta a escala */
                         transform-origin: center; /* Centraliza o ponto de escala */
                         margin: 0 auto;
                     }
