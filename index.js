@@ -76,12 +76,16 @@ app.post("/generate", async (req, res) => {
                         display: flex;
                         justify-content: center;
                         align-items: center;
+                        width: 100%; /* Usa toda largura da tela */
+                        height: 100%; /* Usa toda largura da tela */
                         overflow: hidden; /* Garante que nada extrapole o layout */
                     }
                     #mindmap {
-                        width: auto; /* Ajusta automaticamente à largura */
-                        height: auto; /* Ajusta automaticamente à altura */
-                        transform: none; /* Remove escala fixa */
+                        width: 100%; /* Usa toda a largura da tela */
+                        height: 100%; /* Usa toda a largura da tela */
+                        display: flex;
+                        justify-content: center;
+                        aligin-items: center;
                     }
                     svg {
                         width: 100%;
