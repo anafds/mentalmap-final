@@ -1,11 +1,12 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink, readFile } from "fs/promises";
+import { writeFile, unlink } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import dotenv from "dotenv";
 import cors from "cors";
+import puppeteer from "puppeteer"; // Importa o Puppeteer
 
 dotenv.config();
 
@@ -35,7 +36,7 @@ app.use("/generate", (req, res, next) => {
     next();
 });
 
-// Rota para geração de mapa mental
+// Rota para geração de mapa mental e PDF
 app.post("/generate", async (req, res) => {
     try {
         const markdownContent = req.body.markdown;
@@ -51,7 +52,7 @@ app.post("/generate", async (req, res) => {
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
 
-        // Executa o comando para gerar o HTML do mapa mental
+        // Gera o HTML do mapa mental usando o Markmap
         exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
@@ -61,54 +62,36 @@ app.post("/generate", async (req, res) => {
 
             try {
                 // Lê o conteúdo do HTML gerado
-                let htmlContent = await readFile(outputPath, "utf8");
+                const htmlContent = await readFile(outputPath, "utf8");
 
-                // Adiciona o CSS flexível diretamente ao <head> do HTML gerado
-                const flexibleCSS = `
-                <style>
-                    @page {
-                        size: auto; /* Permite que o tamanho da página se ajuste ao conteúdo */
-                        margin: 0; /* Remove margens adicionais */
-                    }
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        width: 297mm; /* Usa toda largura da tela */
-                        height: 210mm; /* Usa toda largura da tela */
-                        overflow: hidden; /* Garante que nada extrapole o layout */
-                    }
-                    #mindmap {
-                        width: 100%; /* Usa toda a largura da tela */
-                        height: 100%; /* Usa toda a largura da tela */
-                        max-width: 297mm; /* Limita o mapa à altura de A4 */
-                        max-height: 210mm; /* Limita o mapa à altura de A4 */
-                        transform: scale(1.0); /* Ajusta a escala para evitar cortes */
-                        transform-origin: center; /* Centraliza o ponto de escala */
-                        aligin-items: center;
-                    }
-                    svg {
-                        width: 100%;
-                        height: 100%;
-                        displayL block; /* Remove espaçamento adicional */
-                    }
-                </style>
-                `;
-                htmlContent = htmlContent.replace("</head>", `${flexibleCSS}</head>`);
+                // Gera o PDF usando Puppeteer
+                const browser = await puppeteer.launch();
+                const page = await browser.newPage();
 
-                // Envia o HTML gerado como resposta
-                res.setHeader("Content-Type", "text/html");
-                res.send(htmlContent);
+                // Carrega o HTML gerado no navegador controlado
+                await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
-                // Remove os arquivos temporários
+                // Gera o PDF
+                const pdfBuffer = await page.pdf({
+                    format: "A4", // Formato A4
+                    landscape: true, // Modo paisagem
+                    printBackground: true, // Inclui o background no PDF
+                    margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" }, // Margens zero
+                });
+
+                await browser.close();
+
+                // Envia o PDF como resposta
+                res.setHeader("Content-Type", "application/pdf");
+                res.send(pdfBuffer);
+
+                // Remove arquivos temporários
                 await unlink(tempFilePath);
                 await unlink(outputPath);
                 console.log("Arquivos temporários removidos.");
             } catch (error) {
-                console.error("Erro ao processar o HTML gerado:", error);
-                res.status(500).json({ error: "Erro ao processar o HTML gerado" });
+                console.error("Erro ao processar o PDF:", error);
+                res.status(500).json({ error: "Erro ao processar o PDF" });
             }
         });
     } catch (error) {
