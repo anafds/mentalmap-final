@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import dotenv from "dotenv";
 import cors from "cors";
-import puppeteer from "puppeteer"; // Importa o Puppeteer
 
 dotenv.config();
 
@@ -16,15 +15,6 @@ const __dirname = dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
-
-const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-    ],
-});
-
 
 // Configuração de CORS para permitir apenas origens específicas
 app.use(
@@ -45,7 +35,7 @@ app.use("/generate", (req, res, next) => {
     next();
 });
 
-// Rota para geração de mapa mental e PDF
+// Rota para geração de mapa mental
 app.post("/generate", async (req, res) => {
     try {
         const markdownContent = req.body.markdown;
@@ -61,7 +51,7 @@ app.post("/generate", async (req, res) => {
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
 
-        // Gera o HTML do mapa mental usando o Markmap
+        // Executa o comando para gerar o HTML do mapa mental
         exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
@@ -73,34 +63,17 @@ app.post("/generate", async (req, res) => {
                 // Lê o conteúdo do HTML gerado
                 const htmlContent = await readFile(outputPath, "utf8");
 
-                // Gera o PDF usando Puppeteer
-                const browser = await puppeteer.launch();
-                const page = await browser.newPage();
+                // Retorna o HTML gerado como resposta
+                res.setHeader("Content-Type", "text/html");
+                res.send(htmlContent);
 
-                // Carrega o HTML gerado no navegador controlado
-                await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-
-                // Gera o PDF
-                const pdfBuffer = await page.pdf({
-                    format: "A4", // Formato A4
-                    landscape: true, // Modo paisagem
-                    printBackground: true, // Inclui o background no PDF
-                    margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" }, // Margens zero
-                });
-
-                await browser.close();
-
-                // Envia o PDF como resposta
-                res.setHeader("Content-Type", "application/pdf");
-                res.send(pdfBuffer);
-
-                // Remove arquivos temporários
+                // Remove os arquivos temporários
                 await unlink(tempFilePath);
                 await unlink(outputPath);
                 console.log("Arquivos temporários removidos.");
             } catch (error) {
-                console.error("Erro ao processar o PDF:", error);
-                res.status(500).json({ error: "Erro ao processar o PDF" });
+                console.error("Erro ao processar o HTML gerado:", error);
+                res.status(500).json({ error: "Erro ao processar o HTML gerado" });
             }
         });
     } catch (error) {
