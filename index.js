@@ -52,7 +52,7 @@ app.post("/generate", async (req, res) => {
         await writeFile(tempFilePath, markdownContent);
 
         // Executa o comando para gerar o SVG do mapa mental
-        exec(`npx markmap-cli ${tempFilePath} -o ${outputPath} --output-format svg`, async (err) => {
+        exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
                 res.status(500).json({ error: "Erro ao gerar o mapa mental" });
