@@ -16,7 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "markmap-cli": "^0.17.2",
+    "markmap-cli": "^2.0.0",
     "markmap-lib": "^0.17.2",
     "puppeteer": "^23.10.4"
   }
