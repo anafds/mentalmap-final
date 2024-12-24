@@ -76,15 +76,17 @@ app.post("/generate", async (req, res) => {
                         display: flex;
                         justify-content: center;
                         align-items: center;
-                        width: 100vw; /* Usa toda largura da tela */
-                        height: 100vw; /* Usa toda largura da tela */
+                        width: 297mm; /* Usa toda largura da tela */
+                        height: 210mm; /* Usa toda largura da tela */
                         overflow: hidden; /* Garante que nada extrapole o layout */
                     }
                     #mindmap {
-                        width: 100vw; /* Usa toda a largura da tela */
-                        height: 100vw; /* Usa toda a largura da tela */
-                        display: flex;
-                        justify-content: center;
+                        width: 100%; /* Usa toda a largura da tela */
+                        height: 100%; /* Usa toda a largura da tela */
+                        max-width: 297mm; /* Limita o mapa à altura de A4 */
+                        max-height: 210mm; /* Limita o mapa à altura de A4 */
+                        transform: scale(1.0); /* Ajusta a escala para evitar cortes */
+                        transform-origin: center; /* Centraliza o ponto de escala */
                         aligin-items: center;
                     }
                     svg {
