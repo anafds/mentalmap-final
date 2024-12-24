@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink, readFile } from "fs/promises";
+import { writeFile, unlink } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -46,12 +46,12 @@ app.post("/generate", async (req, res) => {
         }
 
         const tempFilePath = join(__dirname, "temp.md");
-        const outputPath = join(__dirname, "mapa-mental.svg");
+        const outputPath = join(__dirname, "mapa-mental.html");
 
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
 
-        // Executa o comando para gerar o SVG do mapa mental
+        // Executa o comando para gerar o HTML do mapa mental
         exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
@@ -60,56 +60,41 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
-                // Lê o conteúdo do SVG gerado
-                let svgContent = await readFile(outputPath, "utf8");
+                // Lê o conteúdo do HTML gerado
+                let htmlContent = await readFile(outputPath, "utf8");
 
-                // Ajusta o viewBox do SVG para preencher o espaço A4 paisagem
-                svgContent = svgContent.replace(
-                    /<svg([^>]*) viewBox="[^"]*"/,
-                    '<svg$1 viewBox="0 0 297 210"' // Define o tamanho do A4 em paisagem
-                );
-
-                // Cria o HTML final com o SVG ajustado
-                const htmlContent = `
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Mapa Mental</title>
-                    <style>
-                        @page {
-                            size: A4 landscape; /* Define o formato A4 paisagem */
-                            margin: 0; /* Remove margens */
-                        }
-                        body {
-                            width: 297mm;
-                            height: 210mm;
-                            margin: 0;
-                            padding: 0;
-                            overflow: hidden;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                        }
-                        #mindmap {
-                            width: 100%;
-                            height: 100%;
-                            max-width: 297mm;
-                            max-height: 210mm;
-                            transform: scale(1.0); /* Ajusta a escala */
-                            transform-origin: center;
-                        }
-                        svg {
-                            width: 100%;
-                            height: 100%;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div id="mindmap">
-                        ${svgContent}
-                    </div>
-                </body>
-                </html>`;
+                // Adiciona o CSS diretamente ao <head> do HTML gerado
+                const customCSS = `
+                <style>
+                    @page {
+                        size: A4 landscape; /* Define o formato A4 paisagem */
+                        margin: 0; /* Remove margens */
+                    }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        width: 297mm;
+                        height: 210mm;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        overflow: hidden; /* Garante que nada ultrapasse a página */
+                    }
+                    #mindmap {
+                        width: 100%;
+                        height: 100%;
+                        max-width: 297mm; /* Limita a largura ao tamanho A4 */
+                        max-height: 210mm; /* Limita a altura ao tamanho A4 */
+                        transform: scale(1.0); /* Ajusta a escala */
+                        transform-origin: center; /* Centraliza o ponto de escala */
+                    }
+                    svg {
+                        width: 100%;
+                        height: 100%;
+                    }
+                </style>
+                `;
+                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
 
                 // Envia o HTML gerado como resposta
                 res.setHeader("Content-Type", "text/html");
