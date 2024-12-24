@@ -63,30 +63,25 @@ app.post("/generate", async (req, res) => {
                 // Lê o conteúdo do HTML gerado
                 let htmlContent = await readFile(outputPath, "utf8");
 
-                // Adiciona o CSS diretamente ao <head> do HTML gerado
-                const customCSS = `
+                // Adiciona o CSS flexível diretamente ao <head> do HTML gerado
+                const flexibleCSS = `
                 <style>
                     @page {
-                        size: A4 landscape; /* Define o formato A4 paisagem */
-                        margin: 0; /* Remove margens */
+                        size: auto; /* Permite que o tamanho da página se ajuste ao conteúdo */
+                        margin: 0; /* Remove margens adicionais */
                     }
                     body {
                         margin: 0;
                         padding: 0;
-                        width: 297mm;
-                        height: 210mm;
                         display: flex;
                         justify-content: center;
                         align-items: center;
-                        overflow: hidden; /* Garante que nada ultrapasse a página */
+                        overflow: hidden; /* Garante que nada extrapole o layout */
                     }
                     #mindmap {
-                        width: 100%;
-                        height: 100%;
-                        max-width: 297mm; /* Limita a largura ao tamanho A4 */
-                        max-height: 210mm; /* Limita a altura ao tamanho A4 */
-                        transform: scale(1.0); /* Ajusta a escala */
-                        transform-origin: center; /* Centraliza o ponto de escala */
+                        width: auto; /* Ajusta automaticamente à largura */
+                        height: auto; /* Ajusta automaticamente à altura */
+                        transform: none; /* Remove escala fixa */
                     }
                     svg {
                         width: 100%;
@@ -94,7 +89,7 @@ app.post("/generate", async (req, res) => {
                     }
                 </style>
                 `;
-                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
+                htmlContent = htmlContent.replace("</head>", `${flexibleCSS}</head>`);
 
                 // Envia o HTML gerado como resposta
                 res.setHeader("Content-Type", "text/html");
