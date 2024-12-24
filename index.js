@@ -17,6 +17,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 
+const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome', // Define o caminho do Chrome
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+    ],
+});
+
+
 // Configuração de CORS para permitir apenas origens específicas
 app.use(
     cors({
