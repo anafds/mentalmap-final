@@ -46,11 +46,13 @@ app.post("/generate", async (req, res) => {
         }
 
         const tempFilePath = join(__dirname, "temp.md");
-        const outputPath = join(__dirname, "mapa-mental.html");
+        const outputPath = join(__dirname, "mapa-mental.svg");
 
+        // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
 
-        exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
+        // Executa o comando para gerar o SVG do mapa mental
+        exec(`npx markmap-cli ${tempFilePath} -o ${outputPath} --output-format svg`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
                 res.status(500).json({ error: "Erro ao gerar o mapa mental" });
@@ -58,43 +60,65 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
-                // Leia o HTML gerado
-                let htmlContent = await readFile(outputPath, "utf8");
+                // Lê o conteúdo do SVG gerado
+                let svgContent = await readFile(outputPath, "utf8");
 
-                // Injete o CSS customizado no <head>
-                const customCSS = `
-                <style>
-                    @page {
-                        size: A4 landscape; /* Define o formato A4 paisagem */
-                        margin: 0; /* Remove margens */
-                    }
-                    body {
-                        width: 297mm; /* Largura A4 em paisagem */
-                        height: 210mm; /* Altura A4 em paisagem */
-                        margin: 0;
-                        padding: 0;
-                        overflow: hidden; /* Impede que o conteúdo extrapole */
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                    }
-                    #mindmap {
-                        width: 100%; /* Usa 100% da largura */
-                        height: 100%; /* Usa 100% da altura */
-                        transform: scale(1.05); /* Ajusta a escala */
-                        transform-origin: center; /* Centraliza o ponto de escala */
-                    }
-                </style>
-                `;
-                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
+                // Ajusta o viewBox do SVG para preencher o espaço A4 paisagem
+                svgContent = svgContent.replace(
+                    /<svg([^>]*) viewBox="[^"]*"/,
+                    '<svg$1 viewBox="0 0 297 210"' // Define o tamanho do A4 em paisagem
+                );
 
-                // Envie o HTML modificado para o cliente
+                // Cria o HTML final com o SVG ajustado
+                const htmlContent = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Mapa Mental</title>
+                    <style>
+                        @page {
+                            size: A4 landscape; /* Define o formato A4 paisagem */
+                            margin: 0; /* Remove margens */
+                        }
+                        body {
+                            width: 297mm;
+                            height: 210mm;
+                            margin: 0;
+                            padding: 0;
+                            overflow: hidden;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        #mindmap {
+                            width: 100%;
+                            height: 100%;
+                            max-width: 297mm;
+                            max-height: 210mm;
+                            transform: scale(1.0); /* Ajusta a escala */
+                            transform-origin: center;
+                        }
+                        svg {
+                            width: 100%;
+                            height: 100%;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="mindmap">
+                        ${svgContent}
+                    </div>
+                </body>
+                </html>`;
+
+                // Envia o HTML gerado como resposta
                 res.setHeader("Content-Type", "text/html");
                 res.send(htmlContent);
 
-                // Limpeza do arquivo temporário
+                // Remove os arquivos temporários
                 await unlink(tempFilePath);
-                console.log("Arquivo temporário removido.");
+                await unlink(outputPath);
+                console.log("Arquivos temporários removidos.");
             } catch (error) {
                 console.error("Erro ao processar o HTML gerado:", error);
                 res.status(500).json({ error: "Erro ao processar o HTML gerado" });
