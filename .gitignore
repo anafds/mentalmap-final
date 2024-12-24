@@ -148,6 +148,7 @@ replit_zip_error_log.txt
 .local/
 .upm/
 .cache/
+.DS_Store/
 
 
 #Pasta do fakefront
