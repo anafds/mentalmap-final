@@ -76,13 +76,13 @@ app.post("/generate", async (req, res) => {
                         display: flex;
                         justify-content: center;
                         align-items: center;
-                        width: 100%; /* Usa toda largura da tela */
-                        height: 100%; /* Usa toda largura da tela */
+                        width: 100vw; /* Usa toda largura da tela */
+                        height: 100vw; /* Usa toda largura da tela */
                         overflow: hidden; /* Garante que nada extrapole o layout */
                     }
                     #mindmap {
-                        width: 100%; /* Usa toda a largura da tela */
-                        height: 100%; /* Usa toda a largura da tela */
+                        width: 100vw; /* Usa toda a largura da tela */
+                        height: 100vw; /* Usa toda a largura da tela */
                         display: flex;
                         justify-content: center;
                         aligin-items: center;
@@ -90,6 +90,7 @@ app.post("/generate", async (req, res) => {
                     svg {
                         width: 100%;
                         height: 100%;
+                        displayL block; /* Remove espaçamento adicional */
                     }
                 </style>
                 `;
