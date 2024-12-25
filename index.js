@@ -67,6 +67,22 @@ app.post("/generate", async (req, res) => {
                 htmlContent = htmlContent.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/index\.js"><\/script>/, "");
                 htmlContent = htmlContent.replace(/<link rel="stylesheet" href="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/style\.css">/, "");
 
+                // Adiciona o CSS customizado no <head>
+                const customCSS = `
+                <style>
+                    /* Configuração do tamanho de página como Tabloid */
+                    @page {
+                        size: 279mm 432mm; /* Dimensões em milímetros (11 x 17 polegadas) */
+                        margin: 10mm; /* Margem ajustável */
+                    }
+                    #mindmap {
+                        display: block;
+                        width: 100%; /* Ajusta para ocupar toda a largura */
+                        height: auto; /* Mantém a proporção */
+                    }
+                </style>`;
+                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
+
                 // Retorna o HTML ajustado como resposta
                 res.setHeader("Content-Type", "text/html");
                 res.send(htmlContent);
