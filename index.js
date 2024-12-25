@@ -61,9 +61,13 @@ app.post("/generate", async (req, res) => {
 
             try {
                 // Lê o conteúdo do HTML gerado
-                const htmlContent = await readFile(outputPath, "utf8");
+                let htmlContent = await readFile(outputPath, "utf8");
 
-                // Retorna o HTML gerado como resposta
+                // Remove a toolbar do Markmap (se existir)
+                htmlContent = htmlContent.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/index\.js"><\/script>/, "");
+                htmlContent = htmlContent.replace(/<link rel="stylesheet" href="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/style\.css">/, "");
+
+                // Retorna o HTML ajustado como resposta
                 res.setHeader("Content-Type", "text/html");
                 res.send(htmlContent);
 
