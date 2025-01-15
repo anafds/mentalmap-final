@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -47,6 +47,9 @@ app.post("/generate", async (req, res) => {
         const tempFilePath = join(__dirname, "temp.md");
         const publicDir = join(__dirname, "public");
         const outputPath = join(publicDir, "mapa-mental.html");
+
+        // Garante que o diretório público existe
+        await mkdir(publicDir, { recursive: true });
 
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
