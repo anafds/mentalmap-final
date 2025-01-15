@@ -60,37 +60,28 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
-                // Lê o conteúdo do HTML gerado
-                let htmlContent = await readFile(outputPath, "utf8");
-
-                // Remove a toolbar do Markmap (se existir)
-                htmlContent = htmlContent.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/index\.js"><\/script>/, "");
-                htmlContent = htmlContent.replace(/<link rel="stylesheet" href="https:\/\/cdn\.jsdelivr\.net\/npm\/markmap-toolbar@[\d.]+\/dist\/style\.css">/, "");
-
-                // Adiciona o CSS customizado no <head>
-                const customCSS = `
-                <style>
-                    /* Configuração do tamanho de página como Tabloid */
-                    @page {
-                        size: 279mm 432mm; /* Dimensões em milímetros (11 x 17 polegadas) */
-                        margin: 10mm; /* Margem ajustável */
-                    }
-                    #mindmap {
-                        display: block;
-                        width: 100%; /* Ajusta para ocupar toda a largura */
-                        height: auto; /* Mantém a proporção */
-                    }
-                </style>`;
-                htmlContent = htmlContent.replace("</head>", `${customCSS}</head>`);
-
-                // Retorna o HTML ajustado como resposta
+                // Configura os cabeçalhos para download
+                res.setHeader("Content-Disposition", `attachment; filename="mapa-mental.html"`);
                 res.setHeader("Content-Type", "text/html");
-                res.send(htmlContent);
 
-                // Remove os arquivos temporários
-                await unlink(tempFilePath);
-                await unlink(outputPath);
-                console.log("Arquivos temporários removidos.");
+                // Envia o arquivo HTML gerado como resposta
+                res.sendFile(outputPath, async (err) => {
+                    if (err) {
+                        console.error("Erro ao enviar o arquivo HTML:", err);
+                        res.status(500).json({ error: "Erro ao enviar o arquivo HTML." });
+                    } else {
+                        console.log("Arquivo HTML enviado com sucesso.");
+
+                        // Remove os arquivos temporários após a resposta
+                        try {
+                            await unlink(tempFilePath);
+                            await unlink(outputPath);
+                            console.log("Arquivos temporários removidos.");
+                        } catch (cleanupError) {
+                            console.error("Erro ao remover arquivos temporários:", cleanupError);
+                        }
+                    }
+                });
             } catch (error) {
                 console.error("Erro ao processar o HTML gerado:", error);
                 res.status(500).json({ error: "Erro ao processar o HTML gerado" });
