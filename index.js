@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, readFile } from "fs/promises";
+import { writeFile } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -17,14 +17,13 @@ const port = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 
 // Configuração de CORS para permitir apenas origens específicas
-app.use(
-    cors({
-        origin: ["http://127.0.0.1:5500", "https://mentalmap-api.onrender.com"], // Adicione aqui os domínios permitidos
-    })
-);
+app.use(cors({ origin: ["http://127.0.0.1:5500", "https://mentalmap-api.onrender.com"] }));
 
 // Middleware para parsing de JSON
 app.use(bodyParser.json());
+
+// Configura o diretório público
+app.use("/public", express.static(join(__dirname, "public")));
 
 // Middleware de autenticação para a rota /generate
 app.use("/generate", (req, res, next) => {
@@ -46,7 +45,8 @@ app.post("/generate", async (req, res) => {
         }
 
         const tempFilePath = join(__dirname, "temp.md");
-        const outputPath = join(__dirname, "mapa-mental.html");
+        const publicDir = join(__dirname, "public");
+        const outputPath = join(publicDir, "mapa-mental.html");
 
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
@@ -60,19 +60,9 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
-                // Configura os cabeçalhos para download
-                res.setHeader("Content-Disposition", `attachment; filename="mapa-mental.html"`);
-                res.setHeader("Content-Type", "text/html");
-
-                // Envia o arquivo HTML gerado como resposta
-                res.sendFile(outputPath, (err) => {
-                    if (err) {
-                        console.error("Erro ao enviar o arquivo HTML:", err);
-                        res.status(500).json({ error: "Erro ao enviar o arquivo HTML." });
-                    } else {
-                        console.log("Arquivo HTML enviado com sucesso.");
-                    }
-                });
+                // Retorna a URL do arquivo gerado
+                const downloadLink = `${req.protocol}://${req.get("host")}/public/mapa-mental.html`;
+                res.status(200).json({ link: downloadLink });
             } catch (error) {
                 console.error("Erro ao processar o HTML gerado:", error);
                 res.status(500).json({ error: "Erro ao processar o HTML gerado" });
