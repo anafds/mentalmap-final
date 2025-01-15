@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -17,20 +17,19 @@ const port = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 
 // Configuração de CORS para permitir apenas origens específicas
-app.use(
-    cors({
-        origin: ["http://127.0.0.1:5500", "https://mentalmap-api.onrender.com"], // Adicione aqui os domínios permitidos
-    })
-);
+app.use(cors({ origin: ["http://127.0.0.1:5500", "https://mentalmap-api.onrender.com"] }));
 
 // Middleware para parsing de JSON
 app.use(bodyParser.json());
+
+// Configura o diretório público
+app.use("/public", express.static(join(__dirname, "public")));
 
 // Middleware de autenticação para a rota /generate
 app.use("/generate", (req, res, next) => {
     const clientKey = req.headers["mindmap-api-key"];
     if (!clientKey || clientKey !== API_KEY) {
-        return res.status(403).send("Acesso negado. Chave de API inválida.");
+        return res.status(403).json({ error: "Acesso negado. Chave de API inválida." });
     }
     next();
 });
@@ -41,16 +40,16 @@ app.post("/generate", async (req, res) => {
         const markdownContent = req.body.markdown;
 
         if (!markdownContent) {
-            res.status(400).send("Conteúdo markdown é obrigatório.");
+            res.status(400).json({ error: "Conteúdo markdown é obrigatório." });
             return;
         }
 
         const tempFilePath = join(__dirname, "temp.md");
+        const publicDir = join(__dirname, "public");
+        const outputPath = join(publicDir, "mapa-mental.html");
 
-        // Gera um identificador único usando timestamp e número aleatório
-        const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-        const outputFileName = `mapa-mental-${uniqueId}.html`;
-        const outputPath = join(__dirname, "public", outputFileName);
+        // Garante que o diretório público existe
+        await mkdir(publicDir, { recursive: true });
 
         // Cria um arquivo temporário com o conteúdo do markdown
         await writeFile(tempFilePath, markdownContent);
@@ -59,29 +58,24 @@ app.post("/generate", async (req, res) => {
         exec(`npx markmap-cli ${tempFilePath} -o ${outputPath}`, async (err) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
-                res.status(500).send("Erro ao gerar o mapa mental.");
+                res.status(500).json({ error: "Erro ao gerar o mapa mental" });
                 return;
             }
 
             try {
-                // URL do arquivo gerado
-                const fileUrl = `${req.protocol}://${req.get("host")}/${outputFileName}`;
-
-                // Envia apenas a URL como resposta simples
-                res.send(fileUrl);
+                // Retorna a URL do arquivo gerado
+                const downloadLink = `${req.protocol}://${req.get("host")}/public/mapa-mental.html`;
+                res.status(200).json({ link: downloadLink });
             } catch (error) {
                 console.error("Erro ao processar o HTML gerado:", error);
-                res.status(500).send("Erro ao processar o HTML gerado.");
+                res.status(500).json({ error: "Erro ao processar o HTML gerado" });
             }
         });
     } catch (error) {
         console.error("Erro interno do servidor:", error);
-        res.status(500).send("Erro interno do servidor.");
+        res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
-
-// Servir arquivos estáticos da pasta "public"
-app.use(express.static(join(__dirname, "public")));
 
 // Inicialização do servidor
 app.listen(port, () => {
