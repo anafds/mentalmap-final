@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink, readFile } from "fs/promises";
+import { writeFile, readFile } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -65,21 +65,12 @@ app.post("/generate", async (req, res) => {
                 res.setHeader("Content-Type", "text/html");
 
                 // Envia o arquivo HTML gerado como resposta
-                res.sendFile(outputPath, async (err) => {
+                res.sendFile(outputPath, (err) => {
                     if (err) {
                         console.error("Erro ao enviar o arquivo HTML:", err);
                         res.status(500).json({ error: "Erro ao enviar o arquivo HTML." });
                     } else {
                         console.log("Arquivo HTML enviado com sucesso.");
-
-                        // Remove os arquivos temporários após a resposta
-                        try {
-                            await unlink(tempFilePath);
-                            await unlink(outputPath);
-                            console.log("Arquivos temporários removidos.");
-                        } catch (cleanupError) {
-                            console.error("Erro ao remover arquivos temporários:", cleanupError);
-                        }
                     }
                 });
             } catch (error) {
