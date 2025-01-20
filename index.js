@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink } from "fs/promises";
+import { writeFile, unlink, mkdir } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -23,9 +23,13 @@ app.post("/generate", async (req, res) => {
 
     const uniqueId = uuidv4(); // Gera um UUID único
     const tempFilePath = join(__dirname, `${uniqueId}.md`);
-    const outputFilePath = join(__dirname, `public/${uniqueId}.html`); // Salva os arquivos no diretório 'public'
+    const publicDir = join(__dirname, "public");
+    const outputFilePath = join(publicDir, `${uniqueId}.html`); // Salva os arquivos no diretório 'public'
 
     try {
+        // Garante que o diretório público existe
+        await mkdir(publicDir, { recursive: true });
+
         // Cria o arquivo Markdown temporário
         await writeFile(tempFilePath, markdown);
 
