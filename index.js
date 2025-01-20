@@ -2,6 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import { writeFile, unlink, mkdir, readdir } from "fs/promises";
 import { exec } from "child_process";
+process.env.PUPPETEER_CACHE_DIR = "/opt/render/.cache/puppeteer"
 import puppeteer from "puppeteer";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
