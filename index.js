@@ -4,6 +4,7 @@ import { writeFile, unlink } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { v4 as uuidv4 } from "uuid"; // Adiciona suporte para UUID
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,8 +21,9 @@ app.post("/generate", async (req, res) => {
         return res.status(400).json({ error: "Conteúdo markdown é obrigatório." });
     }
 
-    const tempFilePath = join(__dirname, "temp.md");
-    const outputFilePath = join(__dirname, "mapa-mental.html");
+    const uniqueId = uuidv4(); // Gera um UUID único
+    const tempFilePath = join(__dirname, `${uniqueId}.md`);
+    const outputFilePath = join(__dirname, `public/${uniqueId}.html`); // Salva os arquivos no diretório 'public'
 
     try {
         // Cria o arquivo Markdown temporário
@@ -35,24 +37,13 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
-                // Configura os cabeçalhos para o download do HTML
-                res.setHeader("Content-Disposition", `attachment; filename="mapa-mental.html"`);
-                res.setHeader("Content-Type", "text/html");
+                // Retorna a URL do arquivo gerado
+                const fileUrl = `${req.protocol}://${req.get("host")}/public/${uniqueId}.html`;
+                res.status(200).send(fileUrl);
 
-                // Envia o arquivo HTML como resposta
-                res.sendFile(outputFilePath, async (err) => {
-                    if (err) {
-                        console.error("Erro ao enviar o arquivo HTML:", err);
-                        res.status(500).json({ error: "Erro ao enviar o arquivo HTML." });
-                    } else {
-                        console.log("Arquivo HTML enviado com sucesso.");
-
-                        // Remove os arquivos temporários
-                        await unlink(tempFilePath);
-                        await unlink(outputFilePath);
-                        console.log("Arquivos temporários removidos.");
-                    }
-                });
+                // Remove o arquivo temporário de Markdown
+                await unlink(tempFilePath);
+                console.log("Arquivo temporário removido.");
             } catch (fileError) {
                 console.error("Erro ao processar o arquivo gerado:", fileError);
                 res.status(500).json({ error: "Erro ao processar o arquivo gerado" });
@@ -63,6 +54,9 @@ app.post("/generate", async (req, res) => {
         res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
+
+// Configuração para servir arquivos estáticos no diretório 'public'
+app.use("/public", express.static(join(__dirname, "public")));
 
 // Inicializa o servidor
 app.listen(port, () => {
