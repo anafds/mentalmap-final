@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: mentalmap-api
+    name: mentalmap-api 
     env: node
-    region: oregon
-    buildCommand: ./render-build.sh && npm install
+    region: oregon      
+    buildCommand: npm install
     startCommand: node index.js
     runtime: node
     plan: free
