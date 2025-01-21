@@ -2,8 +2,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import { writeFile, unlink, mkdir, readdir } from "fs/promises";
 import { exec } from "child_process";
-process.env.PUPPETEER_CACHE_DIR = "/opt/render/.cache/puppeteer"
-import puppeteer from "puppeteer";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -16,7 +14,7 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Rota para gerar mapa mental como HTML
+// Rota para gerar mapa mental e salvar como HTML
 app.post("/generate", async (req, res) => {
     const { markdown } = req.body;
 
@@ -62,40 +60,27 @@ app.post("/generate", async (req, res) => {
     }
 });
 
-// Rota para gerar uma imagem (PNG) a partir de um HTML
-app.post("/generate-image", async (req, res) => {
-    const { url } = req.body;
-
-    if (!url) {
-        return res.status(400).send("URL do arquivo HTML é obrigatória.");
-    }
+// Rota para listar arquivos no diretório "public"
+app.get("/list-files", async (req, res) => {
+    const publicDir = join(__dirname, "public");
 
     try {
-        const browser = await puppeteer.launch({
-            args: ["--no-sandbox", "--disable-setuid-sandbox"], // Necessário para ambientes como Render
-        });
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "networkidle2" });
+        // Lê o conteúdo do diretório "public"
+        const files = await readdir(publicDir);
+        if (files.length === 0) {
+            return res.status(200).json({ message: "Nenhum arquivo encontrado." });
+        }
 
-        // Define o tamanho do viewport para capturar o conteúdo completo
-        await page.setViewport({ width: 1280, height: 800 });
-
-        // Captura a página como uma imagem (PNG)
-        const screenshot = await page.screenshot({ fullPage: true });
-
-        await browser.close();
-
-        // Retorna a imagem como resposta
-        res.setHeader("Content-Type", "image/png");
-        res.setHeader("Content-Disposition", "attachment; filename=mapa-mental.png");
-        res.send(screenshot);
+        // Retorna a lista de arquivos com URLs
+        const fileUrls = files.map((file) => `${req.protocol}://${req.get("host")}/public/${file}`);
+        res.status(200).json({ files: fileUrls });
     } catch (error) {
-        console.error("Erro ao gerar a imagem:", error);
-        res.status(500).send("Erro ao gerar a imagem.");
+        console.error("Erro ao listar arquivos:", error);
+        res.status(500).json({ error: "Erro ao listar arquivos no diretório público." });
     }
 });
 
-// Configuração para servir arquivos estáticos no diretório 'public'
+// Configuração para servir arquivos estáticos no diretório "public"
 app.use("/public", express.static(join(__dirname, "public")));
 
 // Inicializa o servidor
