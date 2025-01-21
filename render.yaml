@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: mentalmap-api
+    env: node
+    region: oregon
+    buildCommand: ./render-build.sh && npm install
+    startCommand: node index.js
+    runtime: node
+    plan: free
+    system:
+      packages:
+        - wget
+        - ca-certificates
+        - fonts-liberation
+        - libappindicator3-1
+        - libasound2
+        - libatk-bridge2.0-0
+        - libatk1.0-0
+        - libcups2
+        - libdbus-1-3
+        - libgdk-pixbuf2.0-0
+        - libnspr4
+        - libnss3
+        - libxcomposite1
+        - libxdamage1
+        - libxrandr2
+        - xdg-utils
