@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { writeFile, unlink, mkdir, readdir } from "fs/promises";
+import { writeFile, unlink, mkdir } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Rota para gerar mapa mental e salvar como HTML
+// Rota para gerar mapa mental como HTML
 app.post("/generate", async (req, res) => {
     const { markdown } = req.body;
 
@@ -42,6 +42,22 @@ app.post("/generate", async (req, res) => {
             }
 
             try {
+                // Adiciona o rodapé com o logo
+                const footer = `
+                <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px 0; background-color: #f9f9f9;">
+                    <img src="https://drive.google.com/uc?id=10zs-Yr9FPRGNvLcOj9MpHoX92W0wa0zx" alt="Logo" style="height: 50px; object-fit: contain;">
+                </footer>
+                `;
+
+                // Lê o HTML gerado
+                const htmlContent = await fs.readFile(outputFilePath, "utf-8");
+
+                // Adiciona o rodapé antes da tag </body>
+                const updatedHtml = htmlContent.replace("</body>", `${footer}</body>`);
+
+                // Salva o HTML atualizado
+                await writeFile(outputFilePath, updatedHtml, "utf-8");
+
                 // Retorna a URL do arquivo gerado
                 const fileUrl = `${req.protocol}://${req.get("host")}/public/${uniqueId}.html`;
                 res.status(200).send(fileUrl);
@@ -50,8 +66,8 @@ app.post("/generate", async (req, res) => {
                 await unlink(tempFilePath);
                 console.log("Arquivo temporário removido.");
             } catch (fileError) {
-                console.error("Erro ao processar o arquivo gerado:", fileError);
-                res.status(500).json({ error: "Erro ao processar o arquivo gerado" });
+                console.error("Erro ao adicionar o rodapé no HTML:", fileError);
+                res.status(500).json({ error: "Erro ao processar o HTML gerado." });
             }
         });
     } catch (error) {
@@ -60,27 +76,7 @@ app.post("/generate", async (req, res) => {
     }
 });
 
-// Rota para listar arquivos no diretório "public"
-app.get("/list-files", async (req, res) => {
-    const publicDir = join(__dirname, "public");
-
-    try {
-        // Lê o conteúdo do diretório "public"
-        const files = await readdir(publicDir);
-        if (files.length === 0) {
-            return res.status(200).json({ message: "Nenhum arquivo encontrado." });
-        }
-
-        // Retorna a lista de arquivos com URLs
-        const fileUrls = files.map((file) => `${req.protocol}://${req.get("host")}/public/${file}`);
-        res.status(200).json({ files: fileUrls });
-    } catch (error) {
-        console.error("Erro ao listar arquivos:", error);
-        res.status(500).json({ error: "Erro ao listar arquivos no diretório público." });
-    }
-});
-
-// Configuração para servir arquivos estáticos no diretório "public"
+// Configuração para servir arquivos estáticos no diretório 'public'
 app.use("/public", express.static(join(__dirname, "public")));
 
 // Inicializa o servidor
