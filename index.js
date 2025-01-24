@@ -1,6 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { readFile, writeFile, unlink, mkdir } from "fs/promises";
+import { writeFile, unlink, mkdir } from "fs/promises";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -35,27 +35,24 @@ app.post("/generate", async (req, res) => {
         await writeFile(tempFilePath, markdown);
 
         // Gera o HTML com o markmap-cli
-        exec(`npx markmap-cli ${tempFilePath} -o ${outputFilePath}`, async (err) => {
+        exec(`npx markmap-cli ${tempFilePath}`, async (err, stdout) => {
             if (err) {
                 console.error("Erro ao gerar o mapa mental:", err);
                 return res.status(500).json({ error: "Erro ao gerar o mapa mental" });
             }
 
             try {
-                // Adiciona o rodapé com o logo
+                // Rodapé com o logo
                 const footer = `
                 <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px 0; background-color: #f9f9f9;">
                     <img src="https://drive.google.com/uc?id=10zs-Yr9FPRGNvLcOj9MpHoX92W0wa0zx" alt="Logo" style="height: 50px; object-fit: contain;">
                 </footer>
                 `;
 
-                // Lê o HTML gerado
-                const htmlContent = await fs.readFile(outputFilePath, "utf-8");
+                // Adiciona o rodapé ao HTML gerado
+                const updatedHtml = stdout.replace("</body>", `${footer}</body>`);
 
-                // Adiciona o rodapé antes da tag </body>
-                const updatedHtml = htmlContent.replace("</body>", `${footer}</body>`);
-
-                // Salva o HTML atualizado
+                // Salva o HTML com o rodapé diretamente
                 await writeFile(outputFilePath, updatedHtml, "utf-8");
 
                 // Retorna a URL do arquivo gerado
